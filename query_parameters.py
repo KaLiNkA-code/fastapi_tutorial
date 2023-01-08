@@ -57,7 +57,7 @@ async def read_user_item(item_id: str, needy: str):
     return item
 
 
-@app.get("/itemss/{item_id}")
+@app.gt("/itemss/{item_id}")
 async def read_user_item(
     item_id: str, needy: str, skip: int = 0, limit: Union[int, None] = None
 ):
