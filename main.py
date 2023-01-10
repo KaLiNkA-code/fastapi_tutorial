@@ -44,15 +44,30 @@ async def read_items(*, item_id: int = Path(title="The ID of the item to get", g
     return results
 
 """
+ge = greater than or equal (Больше или равно)
 gt = greater than (Больше, чем)
-le = less than or equal (меньше или равно) 
+le = less than or equal (Меньше или равно)
+lt = less than (Меньше, чем)
 """
 
 
-@app.get("/item/{item_id}")
+@app.get("/items/{item_id}")
 async def read_items(*, item_id: int = Path(title="The ID of the item to get", gt=0, le=1000), q: str):
     results = {"item_id": item_id}
     if q:
         results.update({"q": q})
     return results
 
+
+
+@app.get("/item/{item_id}")
+async def read_items(
+    *,
+    item_id: int = Path(title="The ID of the item to get", ge=0, le=1000),
+    q: str,
+    size: float = Query(qt=0, lt=10.5)      
+):
+    results = {"item_id": item_id}
+    if q:
+        results.update({"q": q})
+    return results
