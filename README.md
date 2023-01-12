@@ -26,3 +26,12 @@
 
 ## part 10
 ### Body - Nested Models
+
+## part 11
+### Declare Request Example Data
+
+## part 12
+### Extra Data Types
+
+## part 13
+### Cookie Parameters
