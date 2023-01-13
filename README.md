@@ -35,3 +35,26 @@
 
 ## part 13
 ### Cookie Parameters
+
+## part 14
+### Header Parameters
+
+## part 15
+### Resoinse Model - Return Type
+
+## part 16
+### Extra Models
+
+## part 17
+### Response Status Code
+
+## part 18
+### Form Data
+
+## part 19
+### Request Files
+
+## part 20
+### Request Forms and Files
+
+(13/34)
