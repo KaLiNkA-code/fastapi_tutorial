@@ -1,45 +1,72 @@
-from typing import Union, List
-from fastapi import FastAPI, Header
+"""
+Вы можете объявить тип, используемый для ответа, 
+аннотировав возвращаемый тип функции операции пути .
+"""
+from typing import List, Union, Any
+
+from fastapi import FastAPI
+from pydantic import BaseModel, EmailStr
 
 
 app = FastAPI()
 
 
-@app.get("/items/")
-async def read_items(user_agent: Union[str, None] = Header(default=None)):
-    return {"User-Agent": user_agent}
-
-
-# Header автоматически конвертирует user_agent в User-Agent
-# Это можно отключить добавив аргумент в функцию: convert_underscores=False
-
-
-@app.get("/items/")
-async def read_items(strange_header: Union[str, None] = Header(default=None, convert_underscores=False)):
-    return {"strange_header": strange_header}
-
-
-# Дублирующиеся заголовки
-
-"""
-Например, чтобы объявить заголовок X-Token, который может появляться более одного раза, вы можете написать:
-"""
+class Item(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+    tags: List[str] = []
+    tag: List[str] = []
+    
+    
+@app.post("/items/")
+async def create_item(item: Item) -> Item:
+    return item
 
 
 @app.get("/items/")
-async def read_items(x_token: Union[List[str], None] = Header(default=None)):
-    return {"X-Token values": x_token}
-
-
-"""
-X-Token: foo
-X-Token: bar
-
-Ответ будет таким
-{
-    "X-Token values": [
-        "bar",
-        "foo"
+async def read_items() -> List[Item]:
+    return [
+        Item(name="Portal", price=41.0, tax=12),
+        Item(name="Plumbus", price=32.0),
     ]
-}
+    
+    
 """
+response_model Параметр
+В некоторых случаях вам нужно или вы хотите вернуть некоторые данные, 
+которые не совсем соответствуют тому, что объявляет тип.
+"""
+
+
+@app.post("/item/", response_model=Item)
+async def create_item(item: Item) -> Any:
+    return item
+
+
+@app.get("/item/", response_model=List[Item])
+async def read_items() -> Any:
+    return [
+        {"name": "Portal Gun", "price": 42.0},
+        {"name": "Plumbus", "price": 32.0},
+    ]
+
+
+"""
+response_model приоритет
+
+Если вы объявите и возвращаемый тип, и response_model, 
+то response_modelон будет иметь приоритет и использоваться FastAPI.
+"""
+class UserIn(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+    full_name: Union[str, None] = None
+    
+    
+# Don't do this in pproduction!
+@app.post("/user/")
+async def create_user(user: UserIn) -> UserIn:
+    return user
