@@ -1,249 +1,105 @@
-from typing import Union, List
+# Код состояния ответа
+
+"""
+Точно так же, как вы можете указать модель ответа, вы также можете 
+объявить код состояния HTTP, используемый для ответа, с 
+параметром status_codeв любой из операций пути:
+
+@app.get()
+@app.post()
+@app.put()
+@app.delete()
+и т.п.
+"""
+
 
 from fastapi import FastAPI
-from pydantic import BaseModel, EmailStr
-
 
 app = FastAPI()
 
 
-class UserIn(BaseModel):
-    username: str
-    password: str
-    email: EmailStr
-    full_name: Union[str, None] = None
-    
-    
-class UserOut(BaseModel):
-    username: str
-    email: EmailStr
-    full_name: Union[str, None] = None
-    
-    
-class UserInDB(BaseModel):
-    username: str
-    hashed_password: str
-    email: EmailStr
-    full_name: Union[str, None] = None
-    
-    
-def fake_password_hasher(raw_password: str):
-    return "supersecret" + raw_password
-
-
-def fake_save_user(user_in: UserIn):
-    hashed_password = fake_password_hasher(user_in.password)
-    user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
-    print("User saved! ..not really")
-    return user_in_db
-
-
-@app.post("/user/", response_model=UserOut)
-async def create_user(user_id: UserIn):
-    user_saved = fake_save_user(user_id)
-    return user_saved
-
+@app.post("/items/", status_code=201)
+async def create_item(name: str):
+    return {"name": name}
 
 """
-example of code:
+Обратите внимание, что status_codeэто параметр метода «декоратор» 
+( get, post, и т.д.). Не ваша функция работы пути , 
+как и все параметры и тело
 
-user_in = UserIn(username="john", password="secret", email="john.doe@example.com")
-user_dict = user_in.dict()
-print(user_dict)
-
-{
-    'username': 'john',
-    'password': 'secret',
-    'email': 'john.doe@example.com',
-    'full_name': None,
-}
-"""
-# Разворачивание dict
-"""
-UserInDB(**user_dict)
-
-UserInDB(
-    username="john",
-    password="secret",
-    email="john.doe@example.com",
-    full_name=None,
-)
-or
-UserInDB(
-    username = user_dict["username"],
-    password = user_dict["password"],
-    email = user_dict["email"],
-    full_name = user_dict["full_name"],
-)
+Параметр status_codeполучает число с кодом состояния HTTP.
 """
 
 
-# Модель Pydantic из содержимого другого
+# О кодах состояния HTTP
 
 """
-user_dict = user_in.dict()
-UserInDB(**user_dict)
+В HTTP вы отправляете числовой код состояния из 3 цифр как часть ответа.
 
-Эквивалентен
-
-UserInDB(**user_in.dict())
+Эти коды состояния имеют имя, связанное с их распознаванием, 
+но важной частью является номер.
 """
 
-
-# Развертка dict и дополнительные ключевые слова
-
 """
-Если мы хотим добавить доп аргумент, например хешированный пароль, то мы поступаем так:
+100 и выше для «Информации». Вы редко используете их напрямую. 
+Ответы с этими кодами состояния не могут иметь тела.
 
-UserInDB(**user_in.dict(), hashed_password=hashed_password)
+200 и выше для "успешных" ответов. Это те, которые вы 
+будете использовать чаще всего.
 
-Получаем:
+200 это код состояния по умолчанию, что означает, что все было «ОК».
 
-UserInDB(
-    username = user_dict["username"],
-    password = user_dict["password"],
-    email = user_dict["email"],
-    full_name = user_dict["full_name"],
-    hashed_password = hashed_password,
-)
-"""
+Другой пример 201: «Создано». Он обычно используется после создания 
+новой записи в базе данных.
+Особый случай — 204 «Нет контента». Этот ответ используется, когда нет 
+содержимого для возврата клиенту, поэтому у ответа не должно быть тела.
 
+300 и выше для «Перенаправления». Ответы с этими кодами состояния 
+могут иметь или не иметь тела, за исключением 304 «Не изменено», 
+которое не должно иметь его.
 
-# Уменьшить дублирование
+400 и выше предназначены для ответов "Ошибка клиента". Это второй тип, 
+который вы, вероятно, будете использовать чаще всего.
+Например 404, для ответа «Не найдено».
 
-"""
-Мы можем объявить UserBaseмодель, которая служит базой для других наших 
-моделей. И затем мы можем создать подклассы этой модели, которые наследуют 
-ее атрибуты (объявления типов, проверка и т. д.).
+Для общих ошибок от клиента вы можете просто использовать 400.
 
-Все преобразования данных, проверка, документация и т. д. будут по-прежнему 
-работать в обычном режиме.
-
-Таким образом, мы можем объявить только различия между моделями 
-(с открытым текстом password, с hashed_passwordпаролем и без):
+500 и выше для ошибок сервера. Вы почти никогда не используете их напрямую. 
+Когда что-то пойдет не так в какой-то части кода вашего приложения или 
+на сервере, он автоматически вернет один из этих кодов состояния.
 """
 
 
-from typing import Union
+# Ярлык запоминания имен
 
-from fastapi import FastAPI
-from pydantic import BaseModel, EmailStr
+from fastapi import FastAPI, status
 
-
-app = FastAPI()
+add = FastAPI()
 
 
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
-    full_name: Union[str, None] = None
-    
-    
-class UserId(UserBase):
-    password: str
-    
-    
-class UserOut(UserBase):
-    pass
+@app.post("/items/", status_code=201)
+async def create_item(name: str):
+    return {"name": name}
 
-
-class UserInDB(UserBase):
-    hashed_password: str
-    
-    
-def fake_password_hasher(raw_password: str):
-    return "supersecret" + raw_password
-
-
-def fake_save_user(user_in: UserIn):
-    hashed_password = fake_password_hasher(user_in.password)
-    user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
-    print("User saved! ..not really")
-    return user_in_db
-
-
-@app.post("/post/", response_model=UserOut)
-async def create_user(user_in: UserIn):
-    user_saved = fake_save_user(user_in)
-    return user_saved
-
-
-# Union или anyOf
-
-from typing import Union
-
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-app = FastAPI()
-
-
-class BaseItem(BaseModel):
-    description: str
-    type: str
-
-
-class CarItem(BaseItem):
-    type = "car"
-
-
-class PlaneItem(BaseItem):
-    type = "plane"
-    size: int
-
-
-items = {
-    "item1": {"description": "All my friends drive a low rider", "type": "car"},
-    "item2": {
-        "description": "Music is my aeroplane, it's my aeroplane",
-        "type": "plane",
-        "size": 5,
-    },
-}
-
-
-@app.get("/items/{item_id}", response_model=Union[PlaneItem, CarItem])
-async def read_item(item_id: str):
-    return items[item_id]
-
-
-# Список моделей
-
-
-class Item(BaseModel):
-    name: str
-    description: str
-    
-    
-items = [
-    {"name": "Foo", "description": "There comes my hero"},
-    {"name": "Red", "description": "It's my aeroplane"},
-]
-
-@app.get("/items/", response_model=List[Item])
-async def read_items():
-    return items
-
-
-# Ответ с произвольным dict
 
 """
-Вы также можете объявить ответ, используя обычный произвольный dict, 
-объявляя только тип ключей и значений, не используя модель Pydantic.
+201 это код состояния для "Создано".
 
-Это полезно, если вы заранее не знаете допустимые имена полей/атрибутов 
-(которые потребуются для модели Pydantic).
+Но вам не нужно запоминать, что означает каждый из этих кодов.
 
-В этом случае вы можете использовать typing.Dict
+Вы можете использовать удобные переменные из fastapi.status.
 """
-from typing import Dict
-
-from fastapi import FastAPI
 
 
-app = FastAPI()
+@app.post("/items/", status_code=status.HTTP_201_CREATED)
+async def create_item(name: str):
+    return {"name": name}
 
 
-@app.get("/keyword-weights/", response_model=Dict[str, float])
-async def read_keyword_weight():
-    return {"foo": 2.3, "bar": 3.4}
+"""
+Вы также можете использовать from starlette import status.
+
+FastAPI предоставляет то же самое starlette.status для 
+fastapi.statusвашего удобства, как разработчика. Но это исходит 
+непосредственно от Старлетт.
+"""
